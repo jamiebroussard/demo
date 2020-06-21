@@ -1,6 +1,6 @@
 #!/usr/bin/groovy
 // Author:
-// Jamie Broussard jbroussard@prokarma.com
+// Jamie Broussard jamie@jamiebroussard.com
 
 // import shared functions
 @Library('jbroussard-shared') _  // Import Jenkins Global Library

@@ -27,9 +27,8 @@ pipeline {
     // All branches get built and scanned
     stage ('Build') {
       steps {
-          // Build
-          sh "mvn clean install"
-        }
+        // Build
+        sh "mvn clean install"
       }
     }
     stage ('Create Dev Image') {

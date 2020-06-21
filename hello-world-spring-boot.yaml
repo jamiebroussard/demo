@@ -10,8 +10,8 @@ spec:
   type: NodePort
   ports:
   - name: http
-    port: 8080
-    targetPort: 8080
+    port: 8888
+    targetPort: 8888
     protocol: TCP
 ---
 apiVersion: apps/v1
@@ -32,9 +32,9 @@ spec:
    spec:
      containers:
      - name: hello-world-spring-boot
-       image: 087395885892.dkr.ecr.us-east-1.amazonaws.com/hello-world-spring-boot:beta.r8
+       image: 665900821133.dkr.ecr.us-east-1.amazonaws.com/hello-world-spring-boot
        ports:
-       - containerPort: 8080
+       - containerPort: 8888
        env:
        - name: NODE_ENV
          value: "dev"

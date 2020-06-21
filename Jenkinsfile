@@ -1,23 +1,12 @@
 #!/usr/bin/groovy
 // Author:
 // Jamie Broussard jbroussard@prokarma.com
-// Ref:
-// https://jenkins.io/doc/book/pipeline/docker/
-// https://jenkins.io/doc/book/pipeline/syntax/
-// https://dingyuliang.me/jenkins-declarative-pipeline-use-conditional-stages/
-// Usage :
-// set up service_name in pipeline environment
-// set up environment for each stage
-// Create Jenkins Multibranch pipeline job by the same name
-// Create webhook in gitlab
-// devlopment branch deplolys to dev environment only
-// any branch with release in the name deploys to other environments
-// Gates for deployment on all but dev environment
 
-@Library('xcijv-shared-library') _  // Import Jenkins Global Library
+// import shared functions
+@Library('jbroussard-shared') _  // Import Jenkins Global Library
 
 pipeline {
-  agent {label 'sandbox'}
+  agent {label 'master'}
   environment {
     service_name    = "hello-world-spring-boot"
     dev_branch      = "development"
@@ -35,18 +24,13 @@ pipeline {
   }
   // START THE PIPELINE
   stages {
-    // All branches get built and scaned
+    // All branches get built and scanned
     stage ('Build & Scan') {
       steps {
-        withSonarQubeEnv('sonarqube') {
-          script {
-            aws.ecrLogin2(project.dev_region, project.dev_profile)
-            docker.withRegistry("${docker_url}") {
-              docker.image('maven-npm').inside {
-                sh "mvn install verify sonar:sonar -Dmaven.test.failure.ignore -Dsonar.projectKey=hello -Dsonar.sourceEncoding=UTF-8 -Dsonar.test.inclusions=src/test/java/* -Dsonar.sources=src/main -Dsonar.projectVersion=1.0 -Dsonar.language=java -Dsonar.java.binaries=target/classes "
-              }
-            }
-          }
+        script {
+          // Build
+          sh "mvn install"
+          // TODO scan
         }
       }
     }
@@ -170,63 +154,6 @@ pipeline {
         }
       }
     } //Deploy to qa
-    stage ("Deploy to Stage") {
-      when{
-        branch "${rel_branch}"
-      }
-      environment {
-        environment       = "stage"
-        docker_repo       = "${project.prod_aws_account}.dkr.ecr.${project.prod_region}.amazonaws.com"
-        deployment_image  = "${docker_repo}\\/${service_name}:${release_version}"
-        env_yaml          = "${service_name}.${environment}.yaml"
-      }
-      steps {
-        script {
-          input message: 'Deploy to Stage? (Click "Proceed" to continue)'
-          // replace image name with sed on new yaml for this env
-          utility.sedYaml(
-            "$yamlfile",
-            "$env_yaml",
-            "$deployment_image",
-            "$environment"
-          )
-          // deploy
-          container.deploy_stage("$env_yaml", "k8")
-          // Sanity test
-          test.prodSanityTest()
-          input message: 'Finished using the web site? (Click "Proceed" to continue)'
-        }
-      }
-    } //Deploy to Stage
-    stage ("Deploy to Prod") {
-      when{
-        branch "${rel_branch}"
-      }
-      environment {
-        environment       = "prod"
-        docker_repo       = "${project.prod_aws_account}.dkr.ecr.${project.prod_region}.amazonaws.com"
-        deployment_image  = "${docker_repo}\\/${service_name}:${release_version}"
-        env_yaml          = "${service_name}.${environment}.yaml"
-      }
-      steps {
-        script {
-          input message: 'Deploy to Prod? (Click "Proceed" to continue)'
-          // replace image name with sed on new yaml for this env
-          utility.sedYaml(
-            "$yamlfile",
-            "$env_yaml",
-            "$deployment_image",
-            "$environment"
-          )
-          // deploy
-          container.deploy_old_prod("$env_yaml")
-          container.deploy_prod("$env_yaml")
-          // Sanity test
-          test.prodSanityTest()
-          input message: 'Finished using the web site? (Click "Proceed" to continue)'
-        }
-      }
-    } //Deploy to prod
     stage ("Notify") {
       steps {
         script {

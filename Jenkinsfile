@@ -9,7 +9,7 @@ pipeline {
   agent any
   environment {
     service_name    = "hello-world-spring-boot"
-    dev_branch      = "development"
+    dev_branch      = "dev"
     rel_branch      = "release"
     yamlfile        = "${service_name}.yaml"
     app_version     = readFile('version.txt').trim()
@@ -48,15 +48,9 @@ pipeline {
           container.rmDanglingImages()
           container.rmDanglingVolumes()
           // Login to image repo
-          aws.ecrLogin2("$region", "$profile")
-          // Create repo if not exists
-          aws.ecrCreateRepo("$service_name", "$region")
+          aws.ecrLogin("$region")
           // build the image
           container.build_push("$docker_url", "$service_name", "$dev_version")
-          // Scan image
-          test.imageSecScan()
-          // Push to image repo for deployment
-          aws.ecrPush("$docker_repo", "$service_name","$dev_version")
         }
       }
     }

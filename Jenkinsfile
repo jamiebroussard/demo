@@ -9,7 +9,7 @@ pipeline {
   agent any
   environment {
     service_name    = "hello-world-spring-boot"
-    dev_branch      = "dev"
+    dev_branch      = "development"
     rel_branch      = "release"
     yamlfile        = "${service_name}.yaml"
     app_version     = readFile('version.txt').trim()
@@ -44,11 +44,12 @@ pipeline {
       steps {
         script {
           // Clean up
+          // TODO in some environments this will break things
           container.rmDanglingContainers()
           container.rmDanglingImages()
           container.rmDanglingVolumes()
           // Login to image repo
-          aws.ecrLogin("$region")
+          aws.ecrLogin2(project.dev_region, project.dev_profile)
           // build the image
           container.build_push("$docker_url", "$service_name", "$dev_version")
         }

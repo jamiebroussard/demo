@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+ name: hello-world-spring-boot
+ labels:
+   app: hello-world-spring-boot
+spec:
+  selector:
+    app: hello-world-spring-boot
+  type: NodePort
+  ports:
+  - name: http
+    port: 8888
+    targetPort: 8888
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: hello-world-spring-boot
+ labels:
+   app: hello-world-spring-boot
+spec:
+ replicas: 1
+ selector:
+   matchLabels:
+     app: hello-world-spring-boot
+ template:
+   metadata:
+     labels:
+       app: hello-world-spring-boot
+   spec:
+     containers:
+     - name: hello-world-spring-boot
+       image: {{IMAGE}}
+       ports:
+       - containerPort: 8888
+       env:
+       - name: NODE_ENV
+         value: "dev"

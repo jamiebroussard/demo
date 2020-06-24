@@ -33,7 +33,7 @@ pipeline {
     }
     stage ('Create Dev Image') {
       when{
-        branch "${dev_branch}"
+        expression {env.GIT_BRANCH == "${dev_branch}"}
       }
       environment {
         region      = "${project.dev_region}"
@@ -119,19 +119,19 @@ pipeline {
         }
       }
     } //Create Release Images
-    stage ("Deploy to qa") {
+    stage ("Deploy to Prod") {
       when{
         branch "${rel_branch}"
       }
       environment {
-        environment       = "qa"
-        docker_repo       = "${project.dev_aws_account}.dkr.ecr.${project.dev_region}.amazonaws.com"
+        environment       = "prod"
+        docker_repo       = "${project.prod_aws_account}.dkr.ecr.${project.prod_region}.amazonaws.com"
         deployment_image  = "${docker_repo}\\/${service_name}:${release_version}"
         env_yaml          = "${service_name}.${environment}.yaml"
       }
       steps {
         script {
-          input message: 'Deploy to QA? (Click "Proceed" to continue)'
+          input message: 'Deploy to Prod? (Click "Proceed" to continue)'
           // replace image name with sed on new yaml for this env
           utility.sedYaml(
             "$yamlfile",
@@ -140,16 +140,18 @@ pipeline {
             "$environment"
           )
           // deploy
-          container.deploy_qa("$env_yaml")
+          container.deploy_old_prod("$env_yaml")
+          container.deploy_prod("$env_yaml")
           // Sanity test
           test.prodSanityTest()
+          input message: 'Finished using the web site? (Click "Proceed" to continue)'
         }
       }
-    } //Deploy to qa
+    } //Deploy to prod
     stage ("Notify") {
       steps {
         script {
-          utility.sendNotification()
+          notify.emailext("$project.build_notify")
         }
       }
     }

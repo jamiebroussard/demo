@@ -140,7 +140,6 @@ pipeline {
             "$environment"
           )
           // deploy
-          container.deploy_old_prod("$env_yaml")
           container.deploy_prod("$env_yaml")
           // Sanity test
           test.prodSanityTest()

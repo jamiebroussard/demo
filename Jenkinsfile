@@ -150,9 +150,12 @@ pipeline {
     } //Deploy to prod
     stage ("Notify") {
       steps {
-        script {
-          notify.emailext("$project.build_notify")
-        }
+      emailext(
+        body: """<p>STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
+          <p>Check console output at &QUOT;<a href='${env.BUILD_URL}'>${env.JOB_NAME} [${env.BUILD_NUMBER}]</a>&QUOT;</p>""",
+        subject: "STARTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+        to: "jamie@jamiebroussard.com"
+        )
       }
     }
   }// stages
